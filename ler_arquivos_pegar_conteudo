@@ -1,0 +1,78 @@
+  // pegar conteudo de 3 arquivos diferentes e inserir no banco de dados no único registro
+  // pegar nome do arquivo em hexadecimal: 00-00-00-00-00-00-xxx.txt
+  // pegar nome do arquivo em hexadecimal: 00-00-00-00-00-00-yyy.txt
+  // pegar nome do arquivo em hexadecimal: 00-00-00-00-00-00-zzz.txt
+   
+  public function saveFile(){
+
+    $dir = 'C:\\meudiretorio\\subdiretorio\\pasta\\arquivos\\caminho'; // caminho path formato windows
+	  //$dir = '/var/meudiretorio/subdiretorio/pasta/arquivos/caminho/'; // caminho path formato linux
+    $total = 1-count($_FILES);
+
+    // mover arquivos 
+    foreach($_FILES as $file){
+      move_uploaded_file($file['tmp_name'],$dir.$file["name"]);
+    }
+    //listar todos os arquivos do diretorio
+    $scanned_directory = array_diff(scandir($dir), array('..', '.'));//to remove dots
+    // contador de arquivos
+    $files = count($scanned_directory);
+    $cont = 0;
+
+    //ler multiplos arquivos 
+    for ($i = 0; $i <= $files ; $i++) {
+      // se arquivo exise
+      if (isset($_FILES['file'.$i.'']['name'])){
+      // pegar nome do arquivo em hexadecimal: 00-00-00-00-00-00-xxx.txt
+      $name_arq[$i] = (substr(str_replace("-","",$_FILES['file'.$i.'']['name']),0,12)); 
+      // abrir arquivo
+      $fp = fopen($dir.$_FILES['file'.$i.'']['name'], "r");
+      // ler arquivo pegar conteudo 
+      $content[$i] = fread($fp, filesize($dir.$_FILES['file'.$i.'']['name']));
+      // fechar arquivo
+      fclose($fp);
+      // deletar arquivo do diretorio depois de ter pego todas suas informacoes
+      unlink($dir.$_FILES['file'.$i.'']['name']);  // deletar arquivo
+      
+      // armazenar conteudo do primeiro, segundo e terceiro arquivo
+      if ($cont == 0)
+      {
+        $arquivo_0 =  $name_arq[$i];  // pegar nome do arquivo em hexadecimal: 00-00-00-00-00-00-xxx.txt
+        $contents0 =  $content[$i];
+      }
+      if ($cont == 1)
+      {
+        $arquivo_1 =  $name_arq[$i];  // pegar nome do arquivo em hexadecimal: 00-00-00-00-00-00-yyy.txt
+        $contents1 =  $content[$i];
+      }
+      if ($cont == 2)
+      {
+        $arquivo_2 =  $name_arq[$i];  // pegar nome do arquivo em hexadecimal: 00-00-00-00-00-00-zzz.txt
+        $contents2 =  $content[$i];
+      }
+
+      if ($cont == 2){
+        if ($arquivo_0 == $arquivo_1 && $arquivo_0 == $arquivo_2 ){
+          $valor = $arquivo_0;
+          $hexa =  hexdec($valor);
+          $hexa1 =  strtoupper(dechex($hexa + hexdec(1)));  // somar de hexadecimal + 1
+          $hexa2 =  strtoupper(dechex($hexa + hexdec(2)));  // somar de hexadecimal + 2
+          $hexa3 =  strtoupper(dechex($hexa + hexdec(3)));  // somar de hexadecimal + 3
+          $hexa4 =  strtoupper(dechex($hexa + hexdec(4)));  // somar de hexadecimal + 4
+          // verificar se hexadecimal existe para nao havwer duplicacao
+          $result 	= parent::sql("SELECT CAMPO_HEXA1 FROM TABELA WHERE CAMPO_HEXA1 = '".$arquivo_0."'" );
+          $MAC_DOCSIS_WAN = $result[0]->MAC_DOCSIS_WAN;
+          if (empty($MAC_DOCSIS_WAN) ||  $MAC_DOCSIS_WAN === ''){
+            $sql = parent::sql("INSERT INTO TABELA ( CAMPO_HEXA1, CAMPO_HEXA2, CAMPO_HEXA3, CAMPO_HEXA4, CAMPO_HEXA5, CONTEUDO1, CONTEUDO2,  CONTEUDO3, DATE_IN, CHK) VALUES ('$arquivo_0','$hexa1','$hexa2','$hexa3','$hexa4', '$contents0', '$contents1', '$contents2', TO_DATE(SYSDATE, 'dd/mm/yyyy hh24:mi:ss'),'0')");
+          }
+          $cont = 0;
+        }
+      } else {
+        $cont ++;
+      }
+    }
+    }
+     
+    return json_encode($sql);
+    
+    }
