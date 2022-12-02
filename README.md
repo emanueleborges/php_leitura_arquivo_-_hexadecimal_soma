@@ -1,5 +1,5 @@
 # php_leitura_arquivo_-_hexadecimal_soma
-php_leitura_arquivo_+_hexadecimal_soma
+# leitura de arquivo com certificado x509 - geracao arquivo (*.pem) - captura da chave pública 
 
 
  
